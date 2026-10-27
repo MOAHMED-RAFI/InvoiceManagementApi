@@ -1,0 +1,64 @@
+@baseUrl = http://localhost:5080
+
+### Health check
+GET {{baseUrl}}/health
+
+### 1. Create a shipment
+POST {{baseUrl}}/api/shipments
+Content-Type: application/json
+
+{
+  "customer": "ABC Exports",
+  "origin": "Chennai",
+  "destination": "Dubai"
+}
+
+### 2. List shipments (optional filter: ?status=Booked)
+GET {{baseUrl}}/api/shipments
+
+### 3. Move shipment forward (Booked -> InTransit -> Delivered)
+PUT {{baseUrl}}/api/shipments/1/status
+Content-Type: application/json
+
+{
+  "status": "InTransit"
+}
+
+### 4. Create an invoice for shipment 1 (18% tax)
+POST {{baseUrl}}/api/invoices
+Content-Type: application/json
+
+{
+  "shipmentId": 1,
+  "currency": "INR",
+  "taxRate": 18,
+  "lines": [
+    { "description": "Ocean freight", "quantity": 1, "unitPrice": 45000 },
+    { "description": "Terminal handling charges", "quantity": 2, "unitPrice": 3500.50 }
+  ]
+}
+
+### 5. Get invoice
+GET {{baseUrl}}/api/invoices/1
+
+### 6. List invoices (filters: ?status=Draft&shipmentId=1)
+GET {{baseUrl}}/api/invoices?status=Draft
+
+### 7. Issue invoice (Draft -> Issued)
+POST {{baseUrl}}/api/invoices/1/issue
+
+### 8. Mark invoice paid (Issued -> Paid)
+POST {{baseUrl}}/api/invoices/1/pay
+
+### 9. Try an invalid request (shows validation errors)
+POST {{baseUrl}}/api/invoices
+Content-Type: application/json
+
+{
+  "shipmentId": 0,
+  "taxRate": 150,
+  "lines": []
+}
+
+### 10. Try an invalid status change (returns 409 Conflict)
+POST {{baseUrl}}/api/invoices/1/issue
